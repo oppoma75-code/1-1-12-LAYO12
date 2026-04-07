@@ -1,0 +1,72 @@
+def asian_market_strike(self, target_jpy=5000000, target_cny=200000):
+    """توسيع الأعمال نحو الشرق - بروتوكول 1121"""
+    if self.verify_sovereign_identity(1121):
+        print("Agent: تفعيل مجسات طوكيو وبكين...")
+        
+        # اقتناص الين عبر الـ Arbitrage السريع
+        captured_jpy = self.execute_arbitrage_strike("JPY", target_jpy)
+        
+        # سحب اليوان عبر جسر هونغ كونغ (HK Bridge)
+        captured_cny = self.bridge_extraction("CNY", target_cny)
+        
+        # صب الموارد في العقد الذكي وتوليد مفاتيح SK-ASIA
+        self.secure_to_vault("0x4736...", captured_jpy, captured_cny)
+        return True
+def generate_business_expansion_keys(batch_size=12):
+    """توليد حزمة مفاتيح لزيادة الأعمال - منطق الـ 12"""
+    keys_batch = []
+    for i in range(batch_size):
+        seed = f"1121-EXPANSION-{i}-{time.time()}"
+        key = hashlib.sha256(seed.encode()).hexdigest()[:12].upper()
+        keys_batch.append(f"EXP-12-{key}")
+    return keys_batch
+import secrets
+import hashlib
+
+def generate_sovereign_key(auth_code):
+    """توليد مفتاح سيادي فريد لكل عملية اقتناص"""
+    if auth_code == "1121":
+        # مزج الكود مع منطق الـ 12 وضجيج رقمي عالي الأمان
+        raw_key = f"1121-{secrets.token_hex(16)}-12"
+        secure_key = hashlib.sha256(raw_key.encode()).hexdigest()
+        return f"SK-12-{secure_key[:16].upper()}"
+    return None
+
+# واجهة التوليد في Streamlit
+st.divider()
+st.subheader("🔑 توليد مفاتيح العرين")
+if st.button("توليد مفتاح عملية US-1553-8616"):
+    new_key = generate_sovereign_key("1121")
+    st.code(new_key, language="text")
+    st.caption("احفظ هذا المفتاح في 'خوذة Hardhat' فوراً. لا يتم تخزينه في السحابة.")
+import streamlit as st
+import time
+from datetime import datetime, timedelta
+
+def render_withdrawal_monitor():
+    st.subheader("⏳ عداد الحصن المركزي (Vault Timer)")
+    
+    # محاكاة الربط مع العقد الذكي
+    if st.session_state.get('strike_executed'):
+        unlock_time = st.session_state.unlock_time
+        remaining = unlock_time - datetime.now()
+        
+        if remaining.total_seconds() > 0:
+            st.warning(f"قفل السيادة نشط. الوقت المتبقي: {str(remaining).split('.')[0]}")
+            st.progress(1.0 - (remaining.total_seconds() / 86400))
+        else:
+            st.success("🔓 المورد متاح الآن للسحب النهائي إلى العرين.")
+            if st.button("تأفيذ السحب النهائي"):
+                st.balloons()
+def secure_to_vault(self, vault_address, usd_val, eur_val):
+    """تحويل الأصول المقتنصة إلى العقد الذكي السيادي 0x4736..."""
+    total_captured = usd_val + (eur_val * 1.08) # تقييم السيادة الموحد
+    
+    # استدعاء وظيفة executeSovereignStrike من العقد الذكي
+    # التوزيع الآلي: 25% Alpha | 15% Beta | 60% Central (Locked 24h)
+    tx_hash = self.hardhat_contract.functions.executeSovereignStrike(1121).transact({
+        'from': self.planner_address,
+        'value': self.web3.to_wei(total_captured, 'ether')
+    })
+    
+    print(f"Agent: تم قفل المورد بنجاح. Hash: {tx_hash.hex()}")
