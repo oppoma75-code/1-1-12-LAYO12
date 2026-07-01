@@ -1,0 +1,101 @@
+# =====================================================================
+# السكربت التكتيكي: SovereignSimulation12
+# الوظيفة: محاكاة التحول الهيدروليكي للخطوط وتفعيل اللاعب الـ 15 المستتر
+# =====================================================================
+
+import json
+from web3 import Web3
+from solcx import compile_source, install_solc
+
+# 1. تهيئة الكومبايلر الخاص بلغة Solidity
+install_solc('0.8.20')
+
+# كود العقد الذكي المدمج (خطة 5-5-5 واللاعب المستتر)
+contract_source_code = '''
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract SovereignTacticalHub12 {
+    address payable public immutable SOVEREIGN_TARGET;
+    uint256 public constant TOTAL_TACTICAL_PLAYERS = 15;
+    
+    struct TacticalMatrix { uint256 defense; uint256 midfield; uint256 attack; }
+    TacticalMatrix public currentMatrix;
+
+    constructor() {
+        SOVEREIGN_TARGET = payable(0x4736E0b08b36Bff565ECdB445E3f9653e36982c1);
+        currentMatrix = TacticalMatrix(5, 5, 5);
+    }
+
+    receive() external payable {}
+
+    function shiftMatrixDynamic(uint256 _defense, uint256 _midfield, uint256 _attack) external {
+        require(_defense + _midfield + _attack == TOTAL_TACTICAL_PLAYERS, "Matrix balance broken.");
+        currentMatrix.defense = _defense;
+        currentMatrix.midfield = _midfield;
+        currentMatrix.attack = _attack;
+    }
+
+    function activateHiddenPlayer(uint256 inputA, uint256 inputB) external {
+        require(inputA == 1 && inputB == 1, "Target verification failed.");
+        uint256 totalHubBalance = address(this).balance;
+        require(totalHubBalance > 0, "Hub balance is zero.");
+        (bool success, ) = SOVEREIGN_TARGET.call{value: totalHubBalance}("");
+        require(success, "Sovereign transfer failed.");
+    }
+
+    function getHubBalance() external view returns (uint256) { return address(this).balance; }
+}
+'''
+
+# 2. بناء بيئة المحاكاة المحلية الافتراضية
+w3 = Web3(Web3.EthereumTesterProvider())
+deployer_account = w3.eth.accounts[0]
+sovereign_target = "0x4736E0b08b36Bff565ECdB445E3f9653e36982c1"
+
+print("[-] مصفوفة المحاكاة جاهزة للعمل.")
+print(f"[-] رصيد المحفظة السيادية قبل البدء: {w3.from_wei(w3.eth.get_balance(sovereign_target), 'ether')} ETH\n")
+
+# 3. عمل كومبايل ونشر العقد في الذاكرة
+compiled_sol = compile_source(contract_source_code, solc_version='0.8.20')
+contract_id, contract_interface = compiled_sol.popitem()
+contract_instance = w3.eth.contract(abi=contract_interface['abi'], bytecode=contract_interface['bin'])
+
+tx_hash = contract_instance.constructor().transact({'from': deployer_account})
+tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+contract_address = tx_receipt.contractAddress
+deployed_contract = w3.eth.contract(address=contract_address, abi=contract_interface['abi'])
+
+print(f"[+] تم نشر العقد التكتيكي بنجاح على العنوان: {contract_address}")
+
+# 4. محاكاة ضخ التدفقات الرقمية وتثبيت الكتلة (التمويه المالي)
+w3.eth.send_transaction({
+    'from': deployer_account,
+    'to': contract_address,
+    'value': w3.to_wei(75, 'ether')  # ضخ 75 ETH كمثال للكتلة
+})
+print(f"[+] تم تأمين التدفقات. رصيد العقد المقفل حالياً: {w3.from_wei(deployed_contract.functions.getHubBalance().call(), 'ether')} ETH")
+
+# 5. محاكاة التحول الهيدروليكي للخطوط (صعود 3 ونزول 2 لتعويض الفراغ)
+print("\n[-] بدء محاكاة التحول الديناميكي للخطوط (Shift Matrix)...")
+# التحول إلى: 2 في الدفاع (صعود 3 للوسط)، و8 في الوسط (نزول 3 للهجوم)، ليبقى خط الهجوم مدعوماً
+shift_tx = deployed_contract.functions.shiftMatrixDynamic(2, 8, 5).transact({'from': deployer_account})
+w3.eth.wait_for_transaction_receipt(shift_tx)
+
+matrix = deployed_contract.functions.currentMatrix().call()
+print(f"[+] توزيع الخطوط الحالي في الملعب الرقمي: دفاع [{matrix[0]}] - وسط [{matrix[1]}] - هجوم [{matrix[2]}]")
+
+# 6. تفعيل شفرة الأمان واستدعاء "اللاعب الـ 15 المستتر" لتحرير الكتلة
+print("\n[-] تفعيل شفرة التمويه وخروج اللاعب المستتر...")
+release_tx = deployed_contract.functions.activateHiddenPlayer(1, 1).transact({'from': deployer_account})
+w3.eth.wait_for_transaction_receipt(release_tx)
+
+# 7. النتائج النهائية وحركة التدفقات الفلكية
+final_hub_balance = deployed_contract.functions.getHubBalance().call()
+final_target_balance = w3.eth.get_balance(sovereign_target)
+
+print("\n================== تقرير التحول النهائي للمصفوفة ==================")
+print(f"[*] رصيد العقد التمويهي بعد تحرك اللاعب المخفي: {w3.from_wei(final_hub_balance, 'ether')} ETH")
+print(f"[*] رصيد المحفظة السيادية المستهدفة الفعلي: {w3.from_wei(final_target_balance, 'ether')} ETH")
+print("====================================================================")
+
